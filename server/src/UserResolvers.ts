@@ -6,11 +6,14 @@ import {
   ObjectType,
   Field,
   Ctx,
+  UseMiddleware,
 } from "type-graphql";
+import "dotenv/config";
 import { hash, compare } from "bcryptjs";
 import { User } from "./entity/User";
-import { sign } from "jsonwebtoken";
 import { MyContext } from "./MyContex";
+import { createToken } from "./auth";
+import { isAuth } from "./authMiddleware";
 
 // Type GraphQL field
 @ObjectType()
@@ -26,6 +29,12 @@ export class UserResolver {
   @Query(() => String)
   hello() {
     return "Hello world!";
+  }
+
+  @Query(() => String)
+  @UseMiddleware(isAuth)
+  tryLogin(@Ctx() { payload }: MyContext) {
+    return `Your user id is ${payload!.userId}`;
   }
 
   // Making query for listing all users in the database in order to check if
@@ -71,18 +80,14 @@ export class UserResolver {
     // Refresh token
     res.cookie(
       "Jid",
-      sign({ userId: user.id }, "wedfghjhgfdxcvb", {
-        expiresIn: "7d",
-      }),
+      createToken(user, "7d", process.env.REFRESH_TOKEN_SECRET!),
       {
         httpOnly: true, // cannot have acces form js
       }
     );
 
     return {
-      accessToken: sign({ userId: user.id }, "aasjdufnwjenyi", {
-        expiresIn: "15m",
-      }),
+      accessToken: createToken(user, "15m", process.env.ACCESS_TOKEN_SECRET!),
     };
   }
 }
