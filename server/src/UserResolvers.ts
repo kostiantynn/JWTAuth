@@ -7,6 +7,7 @@ import {
   Field,
   Ctx,
   UseMiddleware,
+  Int,
 } from "type-graphql";
 import "dotenv/config";
 import { hash, compare } from "bcryptjs";
@@ -14,6 +15,7 @@ import { User } from "./entity/User";
 import { MyContext } from "./MyContex";
 import { createToken } from "./auth";
 import { isAuth } from "./authMiddleware";
+import { getConnection } from "typeorm";
 
 // Type GraphQL field
 @ObjectType()
@@ -42,6 +44,14 @@ export class UserResolver {
   @Query(() => [User])
   users() {
     return User.find();
+  }
+
+  @Mutation(() => Boolean)
+  async revokeRefreshTokensForUser(@Arg("userId", () => Int) userId: number) {
+    await getConnection()
+      .getRepository(User)
+      .increment({ id: userId }, "tokenVersion", 1);
+    return true;
   }
 
   // Register function, create user instance to db

@@ -18,4 +18,7 @@ export class User extends BaseEntity {
 
   @Column("text") // Didn't select password as a field here, in order to provide security, but I don't mind showing password hash here :)
   password: string;
+
+  @Column("int", { default: 0 })
+  tokenVersion: number;
 }
